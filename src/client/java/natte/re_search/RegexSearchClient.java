@@ -1,11 +1,13 @@
 package natte.re_search;
 
+import java.util.List;
+
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import natte.re_search.particle.ModParticles;
-import natte.re_search.particle.custom.CustomParticle;
+import natte.re_search.network.ItemSearchResultPacketS2C;
+import natte.re_search.network.NetworkingConstants;
 import natte.re_search.render.WorldRendering;
 import natte.re_search.screen.SearchScreen;
 import net.fabricmc.api.ClientModInitializer;
@@ -13,9 +15,11 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRegistry;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
+import net.minecraft.network.PacketByteBuf;
 
 @Environment(EnvType.CLIENT)
 public class RegexSearchClient implements ClientModInitializer {
@@ -23,12 +27,22 @@ public class RegexSearchClient implements ClientModInitializer {
 	public static final String MOD_ID = "re_search";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
+	public static final MinecraftClient Game = MinecraftClient.getInstance();
+
+
 	@Override
 	public void onInitializeClient() {
+		ClientPlayNetworking.registerGlobalReceiver(NetworkingConstants.ITEM_SEARCH_RESULT_PACKET_ID, (client, handler, packet, responseSender) -> RegexSearchClient.onItemSearchResult(packet));
+		
 		registerKeyBinds();
 		
-		ParticleFactoryRegistry.getInstance().register(ModParticles.CUSTOM_PARTICLE, CustomParticle.Factory::new);
 		WorldRendering.register();
+		
+	}
+
+	private static void onItemSearchResult(PacketByteBuf packet) {
+		List<MarkedInventory> inventories = ItemSearchResultPacketS2C.readPackedByteBuf(packet);
+		WorldRendering.setMarkedInventories(inventories);
 	}
 
 	void registerKeyBinds() {

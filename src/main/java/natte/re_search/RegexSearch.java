@@ -1,28 +1,63 @@
 package natte.re_search;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
+import net.fabricmc.fabric.api.networking.v1.PacketSender;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.item.Item;
+import net.minecraft.network.PacketByteBuf;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayNetworkHandler;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.Identifier;
+
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import natte.re_search.particle.ModParticles;
+import natte.re_search.config.Config;
+import natte.re_search.network.ItemSearchResultPacketS2C;
+import natte.re_search.network.NetworkingConstants;
+import natte.re_search.network.Searcher;
 
 public class RegexSearch implements ModInitializer {
-	// This logger is used to write text to the console and the log file.
-	// It is considered best practice to use your mod id as the logger's name.
-	// That way, it's clear which mod wrote info, warnings, and errors.
+
 	public static final String MOD_ID = "re_search";
-    public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+
+	public static final Item ARROW_ITEM = new Item(new FabricItemSettings());
 
 	@Override
 	public void onInitialize() {
-		// This code runs as soon as Minecraft is in a mod-load-ready state.
-		// However, some things (like resources) may still be uninitialized.
-		// Proceed with mild caution.
 
-		LOGGER.info("Hello Fabric world!");
+		Config.init(MOD_ID, Config.class);
 
-		ModParticles.registerParticles();
+		Registry.register(Registries.ITEM, new Identifier(MOD_ID, "arrow_item"), ARROW_ITEM);
 
-		// new TextFieldWidget(new Te)
+		ServerPlayConnectionEvents.INIT.register((handler, server) -> {
+			ServerPlayNetworking.registerReceiver(handler, NetworkingConstants.ITEM_SEARCH_PACKET_ID,
+					RegexSearch::receive);
+		});
+
+	}
+
+	private static void receive(MinecraftServer server, ServerPlayerEntity player, ServerPlayNetworkHandler handler, PacketByteBuf buf, PacketSender responseSender) {
+		
+		String expression = buf.readString();
+
+		server.execute(() -> {
+			List<MarkedInventory> inventories = Searcher.search(expression, player);
+			
+			PacketByteBuf packet = ItemSearchResultPacketS2C.createPackedByteBuf(inventories);
+			responseSender.sendPacket(NetworkingConstants.ITEM_SEARCH_RESULT_PACKET_ID, packet);
+			
+			if(inventories.isEmpty()){
+				player.sendMessage( net.minecraft.text.Text.translatable("popup.re_search.no_matching_items_found"), true);
+			}
+		});
 	}
 }
