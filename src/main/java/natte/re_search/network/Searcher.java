@@ -2,6 +2,7 @@ package natte.re_search.network;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import natte.re_search.MarkedInventory;
@@ -37,15 +38,19 @@ public class Searcher {
         for(BlockPos blockPos : BlockPos.iterateOutwards(player.getBlockPos(), Config.range, Config.range, Config.range)){
 
             BlockState blockstate = world.getBlockState(blockPos);
-            // null check?
+
+            Predicate<ItemStack> predicate = itemStack -> {
+                String name = itemStack.getItem().getName().getString();
+                return !name.equals("Air") && pattern.matcher(name).find();
+            };
+
             MarkedInventory markedInventory = new MarkedInventory(blockPos.toImmutable(), blockstate.getBlock().asItem().getDefaultStack());
             if(blockstate.hasBlockEntity()){
                 BlockEntity tileEntity = world.getBlockEntity(blockPos);
                 if(tileEntity instanceof Inventory inventory){
                     for(int i = 0;  i < inventory.size(); ++i){
                         ItemStack itemStack = inventory.getStack(i);
-                        String name = itemStack.getItem().getName().getString();
-                        if(!name.equals("Air") && pattern.matcher(name).find()){
+                        if(predicate.test(itemStack)){
                             markedInventory.addItem(itemStack);
                         }
                     }

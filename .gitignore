@@ -23,6 +23,8 @@ classes/
 bin/
 .classpath
 .project
+todo.*
+
 
 # macos
 

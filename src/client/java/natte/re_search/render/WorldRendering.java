@@ -3,9 +3,9 @@ package natte.re_search.render;
 import java.util.ArrayList;
 import java.util.List;
 
-// import org.joml.Matrix4f;
+import org.joml.Matrix4f;
 import org.joml.Quaternionf;
-// import org.joml.Vector3f;
+import org.joml.Vector3f;
 import natte.re_search.MarkedInventory;
 import natte.re_search.RegexSearch;
 import net.fabricmc.api.EnvType;
@@ -42,6 +42,8 @@ public class WorldRendering {
         WorldRenderEvents.BEFORE_ENTITIES.register(context -> {
             rotateBasedOnPosition(context, client);
             // rotateBasedOnCamera(context, client);
+            // rotateBasedOnSomethingElse(context, client);
+
             return;
            
         });
@@ -200,7 +202,7 @@ public class WorldRendering {
             matrixStack.pop();
         }
     }
-    /*
+    
     private static void rotateBasedOnCamera(WorldRenderContext context, MinecraftClient client){
         if(getMarkedInventoriesSize() == 0) return;
 
@@ -254,13 +256,30 @@ public class WorldRendering {
                 // vv = transformedPosition.normalize();
                 // vv.subtract(vv.normalize().multiply(1));
                 // vv=vv.multiply(0.5);
-                Vector3f v = r.transformInverse(vv.toVector3f());
+
+                Vector3f dirVec = transformedPosition.toVector3f();
+                r.transform(dirVec);
+                //transformedPosition.toVector3f();
+                Quaternionf direction = new Quaternionf().lookAlong(transformedPosition.toVector3f(), dirVec);
+                
+                direction.difference(r);
+                Vector3f v = new Vector3f(0, 0, 1);
+                direction.invert().transform(v);
+                // direction.transform(dirVec);
+                // dirVec.mul((float)transformedPosition.length() * 0.5f);
+                // Vector3f v = r.transformInverse(vv.toVector3f());
                 // v.sub(new Vec3d(v.x, v.y, v.z).multiply(0.1f).toVector3f());
                 // v=vv.toVector3f();
-                v=new Vector3f(0, 0, distance-0.25f);
+                // v=new Vector3f(0, 0, distance-0.25f);
+                // matrixStack.peek().getPositionMatrix().rotate
+                // v = transformedPosition.toVector3f().mul(-1f);
                 // matrixStack.translate(transformedPosition.toVector3f().mul(camera.getRotation().t), y, size);
-                // matrixStack.translate(v.x, v.y, v.z);
-                // matrixStack.translate(1, 0, 0);
+                // matrixStack.translate(v.x, v.y, 0);
+                // matrixStack.translate(dirVec.x, dirVec.y, dirVec.z);
+                // matrixStack.translate(0, 0, (float)transformedPosition.length() - 1f);
+                // matrixStack.multiply(direction.invert(), 0, 0, 0);
+                // if(client.world.random.nextFloat() < 0.0001) System.out.println(matrixStack.peek());
+                // matrixStack.
                 // matrixStack.multiply(new Quaternionf().identity());
                 // matrixStack.multiplyPositionMatrix(new Matrix4f().scale(0.1f));
                 // matrixStack.multiplyPositionMatrix(new Matrix4f().scale(10f));
@@ -277,7 +296,7 @@ public class WorldRendering {
                 scale *= 0.15f;
                 // if(scale < 0.05) scale = (scale-0.05f)*0.9f+0.05f;//(scale-0.05f)*2+0.05f;
                 // scale = Math.max(scale, 0.02f);
-                scale = Math.max(scale, (scale - 0.02f) * 0.7f + 0.02f);
+                // scale = Math.max(scale, (scale - 0.02f) * 0.7f + 0.02f);
 
                 float smoothing = 100f;
                 // smoothing = client.player.headYaw;
@@ -348,9 +367,73 @@ public class WorldRendering {
     }
 
     private static void rotateBasedOnSomethingElse(WorldRenderContext context, MinecraftClient client){
+        if(getMarkedInventoriesSize() == 0) return;
+
+        Camera camera = context.camera();
         
+        for(MarkedInventory inventory : getMarkedInventories()){
+            
+            BlockPos blockPos = inventory.blockPos;
+            
+            MatrixStack matrixStack = new MatrixStack();
+    
+            int size = inventory.inventory.size();
+            int sideLength = (int)Math.ceil(Math.sqrt(size));
+            // int height = (int)Math.ceil((double)size / sideLength);
+
+            int i = -1;
+            for(ItemStack itemStack : inventory.inventory){
+                i += 1;
+                int x = i % sideLength;
+                int y = i / sideLength;
+        
+                Vec3d targetPosition = new Vec3d(blockPos.getX(), blockPos.getY(), blockPos.getZ()).add(0.5, 0.5, 0.5);
+                Vec3d transformedPosition = targetPosition.subtract(camera.getPos());
+                // Vec3d transformedPosition = targetPosition.subtract(camera.getPos().subtract(0, 1.62f - 0.5f, 0));
+                // System.out.println(client.player.getEyeY());
+                matrixStack.push();
+                
+                matrixStack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(camera.getPitch()));
+                matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(camera.getYaw() + 180.0F));
+                
+                float d = 1.62f-0.5f;
+                d = client.player.getInventory().selectedSlot;
+                // System.out.println(d);
+                matrixStack.translate(transformedPosition.x, transformedPosition.y, transformedPosition.z); // move item to block pos
+                
+                float rotation = (float)MathHelper.atan2(transformedPosition.x, transformedPosition.z);
+                Quaternionf q = RotationAxis.POSITIVE_Y.rotation(rotation+(float)Math.PI);
+                matrixStack.multiply(q);
+                q = RotationAxis.POSITIVE_X.rotation((float)MathHelper.atan2(transformedPosition.y, Math.hypot(transformedPosition.x, transformedPosition.z)));
+                matrixStack.translate(0, d, 0);
+                matrixStack.multiply(q);
+                matrixStack.translate(0, -d, 0);
+
+
+                float distance = (float)transformedPosition.subtract(0, 0, 0).length();
+
+                float scale = 1f / distance;
+                scale *= 0.15f;
+                // if(scale < 0.05) scale = (scale-0.05f)*0.9f+0.05f;//(scale-0.05f)*2+0.05f;
+                // scale = Math.max(scale, 0.02f);
+                // scale = Math.max(scale, (scale - 0.02f) * 0.7f + 0.02f);
+                
+                // matrixStack.translate(0, 0, distance-0.25f);  // move item to 0.25 distance from camera
+                // matrixStack.scale(scale, scale, scale);
+                // matrixStack.multiply(RotationAxis.POSITIVE_Y.rotation(rotation+(float)Math.PI).invert());
+
+                // matrixStack.translate(x * 1.1f - (y == size / sideLength ? size % sideLength : sideLength) / 2f + 0.5f, y*1.1f + 1f, 0f);
+                matrixStack.translate(x * 1.125f - (y == (float)size / sideLength ? size % sideLength : sideLength) / 2f + 0.5f- 0.125f*sideLength/2+0.0625, y*1.125f + 1f+0.6f, 0f);
+                
+
+                ItemRenderer itemRenderer = client.getItemRenderer();
+                itemRenderer.renderItem(itemStack, ModelTransformationMode.GUI, 0xff, OverlayTexture.DEFAULT_UV, matrixStack, context.consumers(), client.world, 0);
+            
+                matrixStack.pop();
+            }
+        }
     }
-*/
+
     /*
     private static void drawCubes(BufferBuilder buffer, MatrixStack matrixStack) {
         for (Vec3i pos : blockPositions) {
