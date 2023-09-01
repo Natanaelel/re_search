@@ -8,4 +8,6 @@ public class Config extends ConfigManager {
 
     @Expose public static int range = 12;
 
+    @Expose public static int recursionLimit = -1;
+
 }
