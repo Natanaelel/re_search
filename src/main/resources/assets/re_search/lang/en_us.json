@@ -1,4 +1,11 @@
 {
     "item.re_search.arrow_item": "Arrow",
-    "popup.re_search.no_matching_items_found": "No matching items found"
+    "popup.re_search.no_matching_items_found": "No matching items found",
+    "category.re_search.keybinds": "Regex Search",
+    "key.re_search.search": "Open search box",
+    "screen.re_search.label": "Search",
+    "option.re_search.case_sensitivity.sensitive": "Case sensitive",
+    "description.re_search.case_sensitivity.sensitive": "Match letter case",
+    "option.re_search.case_sensitivity.insensitive": "Case insensitive",
+    "description.re_search.case_sensitivity.insensitive": "Ignore letter case"
 }

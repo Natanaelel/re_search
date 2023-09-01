@@ -3,7 +3,7 @@ package natte.re_search.network;
 import java.util.ArrayList;
 import java.util.List;
 
-import natte.re_search.MarkedInventory;
+import natte.re_search.search.MarkedInventory;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketByteBuf;
@@ -18,10 +18,13 @@ public class ItemSearchResultPacketS2C {
         for (MarkedInventory inventory : inventories) {
             
             packet.writeBlockPos(inventory.blockPos);
-            packet.writeItemStack(inventory.container);
-            
+
+            packet.writeInt(inventory.containers.size());            
+            for (ItemStack itemStack : inventory.containers) {
+                packet.writeItemStack(itemStack);
+            }
+
             packet.writeInt(inventory.inventory.size());
-            
             for (ItemStack itemStack : inventory.inventory) {
                 packet.writeItemStack(itemStack);
             }
@@ -37,8 +40,16 @@ public class ItemSearchResultPacketS2C {
         for(int i = 0; i < inventoriesSize; ++i){
             
             BlockPos blockPos = packet.readBlockPos();
-            ItemStack container = packet.readItemStack();
-            MarkedInventory inventory = new MarkedInventory(blockPos, container);            
+            MarkedInventory inventory = new MarkedInventory(blockPos);      
+
+
+            int containersSize = packet.readInt();
+
+            for(int j = 0; j < containersSize; ++j){
+                ItemStack itemStack = packet.readItemStack();
+                inventory.addContainer(itemStack);
+            }
+
             int inventorySize = packet.readInt();
 
             for(int j = 0; j < inventorySize; ++j){

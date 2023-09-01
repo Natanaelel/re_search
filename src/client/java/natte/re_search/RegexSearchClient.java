@@ -10,6 +10,7 @@ import natte.re_search.network.ItemSearchResultPacketS2C;
 import natte.re_search.network.NetworkingConstants;
 import natte.re_search.render.WorldRendering;
 import natte.re_search.screen.SearchScreen;
+import natte.re_search.search.MarkedInventory;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;

@@ -1,4 +1,4 @@
-package natte.re_search;
+package natte.re_search.search;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,15 +13,21 @@ public class MarkedInventory {
     public BlockPos blockPos;
     public List<ItemStack> inventory;
     public Vector4f screenPos;
-    public ItemStack container;
-    public MarkedInventory(BlockPos blockPos, ItemStack container){
+    public List<ItemStack> containers;
+    public MarkedInventory(BlockPos blockPos){
         this.blockPos = blockPos;
         this.inventory = new ArrayList<>();
-        this.container = container;
+        this.containers = new ArrayList<>();
     }
+    
     public void addItem(ItemStack itemStack){
         this.inventory.add(itemStack);
     }
+
+    public void addContainer(ItemStack itemStack){
+        this.containers.add(itemStack);
+    }
+
     public boolean isEmpty(){
         return inventory.isEmpty();
     }

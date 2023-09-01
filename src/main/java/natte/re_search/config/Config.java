@@ -1,13 +1,11 @@
 package natte.re_search.config;
 
+import com.google.gson.annotations.Expose;
 
+public class Config extends ConfigManager {
 
-public class Config extends MidnightConfig {
+    @Expose public static boolean isCaseSensitive = false;
 
-    @Entry
-    public static boolean isCaseSensitive = false;
-
-    @Entry
-    public static int range = 20;
+    @Expose public static int range = 12;
 
 }

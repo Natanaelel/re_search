@@ -2,14 +2,18 @@ package natte.re_search.screen;
 
 import org.lwjgl.glfw.GLFW;
 
+import natte.re_search.RegexSearch;
+import natte.re_search.config.Config;
 import natte.re_search.network.ItemSearchPacketC2S;
 import natte.re_search.network.NetworkingConstants;
 import natte.re_search.render.WorldRendering;
+import natte.re_search.search.SearchOptions;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.tooltip.Tooltip;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -17,16 +21,13 @@ import net.minecraft.util.Identifier;
 @Environment(EnvType.CLIENT)
 public class SearchScreen extends Screen {
 
-    private static final Identifier WIDGET_TEXTURE = new Identifier("re_search", "textures/gui/widgets.png");
+    private static final Identifier WIDGET_TEXTURE = new Identifier(RegexSearch.MOD_ID, "textures/gui/widgets.png");
 
     private Screen parent;
     private MinecraftClient client;
 
     private TextFieldWidget searchBox;
-    // private TexturedCyclingButtonWidget<CaseSensitivity> caseSensitivityButton;
 
-    private CaseSensitivity caseSensitivity = CaseSensitivity.SENSITIVE;
-    // private ButtonWidget searchModeButton;
 
     public SearchScreen(Screen parent, MinecraftClient client) {
         super(Text.translatable("screen.re_search.label"));
@@ -38,11 +39,10 @@ public class SearchScreen extends Screen {
     @Override
     protected void init() {
 
-        // super.init();
         int boxWidth = 120;
         int boxHeight = 18;
         int x = width / 2 - boxWidth / 2;
-        int y = height - boxHeight / 2 - 200;
+        int y = height / 2 - boxHeight / 2 + 50;
 
         Text text = Text.of("");
 
@@ -50,17 +50,10 @@ public class SearchScreen extends Screen {
         setInitialFocus(searchBox);
         addDrawableChild(searchBox);
 
-        // this.addDrawableChild(
-        // TexturedCyclingButtonWidget
-        // .builder(value -> ((CaseSensitivity)value).name)
-        // .values(CaseSensitivity.INSENSITIVE, CaseSensitivity.SENSITIVE)
-        // .build(width / 2 - 61, y + 30, 20, 20,
-        // Text.translatable("option.re_search.case_sensitivity"), (button, value) -> {
-        // caseSensitivity = (CaseSensitivity) value;
-        // }));
-        this.addDrawableChild(new TexturedCyclingButtonWidget<CaseSensitivity>(CaseSensitivity.SENSITIVE,
+        
+        this.addDrawableChild(new TexturedCyclingButtonWidget<CaseSensitivity>(Config.isCaseSensitive ? CaseSensitivity.SENSITIVE : CaseSensitivity.INSENSITIVE,
                 width / 2 - 61, y + 30, 20, 20, 0, 0, 20, 256, 256, WIDGET_TEXTURE, this::onCaseSensitiveButtonPress,
-                mode -> null, mode -> mode.uOffset));
+                mode -> Tooltip.of(mode.info), mode -> mode.uOffset));
     }
 
     @Override
@@ -72,7 +65,7 @@ public class SearchScreen extends Screen {
                 WorldRendering.clearMarkedInventories();
             } else {
                 ClientPlayNetworking.send(NetworkingConstants.ITEM_SEARCH_PACKET_ID,
-                        ItemSearchPacketC2S.createPackedByteBuf(searchBox.getText()));
+                        ItemSearchPacketC2S.createPackedByteBuf(new SearchOptions(searchBox.getText(), Config.isCaseSensitive)));
             }
             close();
             return true;
@@ -84,6 +77,7 @@ public class SearchScreen extends Screen {
     @Override
 
     public void close() {
+        Config.save();
         client.setScreen(this.parent);
     }
 
@@ -100,10 +94,10 @@ public class SearchScreen extends Screen {
     }
 
     void onCaseSensitiveButtonPress(TexturedCyclingButtonWidget<CaseSensitivity> button) {
-        System.out.println(button.state);
-        this.caseSensitivity = CaseSensitivity.values()[(this.caseSensitivity.ordinal() + 1)
-                % CaseSensitivity.values().length];
-        button.state = this.caseSensitivity;
+        Config.isCaseSensitive = !Config.isCaseSensitive;
+        Config.markDirty();
+
+        button.state = Config.isCaseSensitive ? CaseSensitivity.SENSITIVE : CaseSensitivity.INSENSITIVE;
     }
 
 }
