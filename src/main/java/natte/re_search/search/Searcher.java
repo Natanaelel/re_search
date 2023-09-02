@@ -2,8 +2,6 @@ package natte.re_search.search;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Predicate;
-import java.util.regex.Pattern;
 
 import natte.re_search.config.Config;
 import net.minecraft.block.BlockState;
@@ -11,12 +9,12 @@ import net.minecraft.block.Blocks;
 import net.minecraft.block.ShulkerBoxBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.CampfireBlockEntity;
-import net.minecraft.block.entity.EndPortalBlockEntity;
 import net.minecraft.block.entity.LecternBlockEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.decoration.ItemFrameEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.vehicle.VehicleInventory;
 import net.minecraft.inventory.Inventories;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.BlockItem;
@@ -25,7 +23,6 @@ import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.state.property.Properties;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
@@ -33,29 +30,22 @@ import net.minecraft.world.World;
 
 public class Searcher {
 
-    // private static final int blockLimit = 1000;
 
     public static List<MarkedInventory> search(SearchOptions searchOptions, ServerPlayerEntity playerEntity) {
 
-        String expression = searchOptions.expression;
 
         List<MarkedInventory> inventories = new ArrayList<>();
 
         PlayerEntity player = playerEntity;
         World world = player.getWorld();
 
-        Pattern pattern = Pattern.compile(expression, searchOptions.isCaseSensitive ? 0 : Pattern.CASE_INSENSITIVE);
-
-        Predicate<ItemStack> predicate = itemStack -> {
-            String name = itemStack.getItem().getName().getString();
-            return !name.equals("Air") && pattern.matcher(name).find();
-        };
-
+        Filter filter = new Filter(searchOptions, playerEntity);
+     
         for (BlockPos blockPos : BlockPos.iterateOutwards(player.getBlockPos(), Config.range, Config.range,
                 Config.range)) {
 
             MarkedInventory markedInventory = new MarkedInventory(blockPos.toImmutable());
-            search(blockPos, world, predicate, markedInventory, Config.recursionLimit);
+            search(blockPos, world, filter, markedInventory, Config.recursionLimit);
 
             if (!markedInventory.isEmpty()) {
                 inventories.add(markedInventory);
@@ -71,7 +61,7 @@ public class Searcher {
         for (Entity entity : entities) {
 
             MarkedInventory markedInventory = new MarkedInventory(entity.getBlockPos());
-            search(entity, predicate, markedInventory, Config.recursionLimit);
+            search(entity, filter, markedInventory, Config.recursionLimit);
 
             if (!markedInventory.isEmpty()) {
                 inventories.add(markedInventory);
@@ -81,7 +71,7 @@ public class Searcher {
         return inventories;
     }
 
-    private static boolean search(ItemStack itemStack, Predicate<ItemStack> predicate, MarkedInventory markedInventory,
+    private static boolean search(ItemStack itemStack, Filter predicate, MarkedInventory markedInventory,
             int recursionDepth) {
 
         if (recursionDepth == 0)
@@ -132,7 +122,7 @@ public class Searcher {
         return foundAny;
     }
 
-    private static boolean search(BlockPos blockPos, World world, Predicate<ItemStack> predicate,
+    private static boolean search(BlockPos blockPos, World world, Filter predicate,
             MarkedInventory markedInventory, int recursionDepth) {
         if (recursionDepth == 0)
             return false;
@@ -140,7 +130,6 @@ public class Searcher {
         boolean foundAny = false;
 
         BlockState blockState = world.getBlockState(blockPos);
-        // if(!blockState.isAir())System.out.println(blockState.toString());
 
         if (blockState.hasBlockEntity()) {
             BlockEntity tileEntity = world.getBlockEntity(blockPos);
@@ -173,13 +162,6 @@ public class Searcher {
             }
         }
 
-        // end portal frame
-        else if(blockState.isOf(Blocks.END_PORTAL_FRAME)){
-            if(blockState.get(Properties.EYE)){
-                if (search(Items.ENDER_EYE.getDefaultStack(), predicate, markedInventory, recursionDepth - 1))
-                    foundAny = true;
-            }
-        }
 
 
 
@@ -189,7 +171,7 @@ public class Searcher {
         return foundAny;
     }
 
-    private static boolean search(Entity entity, Predicate<ItemStack> predicate, MarkedInventory markedInventory,
+    private static boolean search(Entity entity, Filter predicate, MarkedInventory markedInventory,
             int recursionDepth) {
         if (recursionDepth == 0)
             return false;
@@ -217,7 +199,14 @@ public class Searcher {
                 markedInventory.addContainer(Items.ARMOR_STAND.getDefaultStack());
             }
         }
-
+        else if (entity instanceof VehicleInventory vehicleInventory){
+            for (ItemStack itemStack : vehicleInventory.getInventory()) {
+                if (search(itemStack, predicate, markedInventory, recursionDepth - 1))
+                    foundAny = true;
+            }
+            if(foundAny)
+                markedInventory.addContainer(entity.getPickBlockStack());
+        }
         return foundAny;
 
     }

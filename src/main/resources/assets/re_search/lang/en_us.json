@@ -7,5 +7,12 @@
     "option.re_search.case_sensitivity.sensitive": "Case sensitive",
     "description.re_search.case_sensitivity.sensitive": "Match letter case",
     "option.re_search.case_sensitivity.insensitive": "Case insensitive",
-    "description.re_search.case_sensitivity.insensitive": "Ignore letter case"
+    "description.re_search.case_sensitivity.insensitive": "Ignore letter case",
+    "option.re_search.search_mode.regex": "Regex search",
+    "description.re_search.search_mode.regex": "Search using regular expressions",
+    "option.re_search.search_mode.literal": "Literal search",
+    "description.re_search.search_mode.literal": "Search for literal text",
+    "option.re_search.search_mode.extended": "Extended search",
+    "description.re_search.search_mode.extended": "Search using extended notation"
+    
 }

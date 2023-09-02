@@ -10,4 +10,6 @@ public class Config extends ConfigManager {
 
     @Expose public static int recursionLimit = -1;
 
+    @Expose public static int searchMode = 0;
+
 }

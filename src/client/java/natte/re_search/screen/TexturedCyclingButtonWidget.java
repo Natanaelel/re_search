@@ -15,7 +15,7 @@ import net.minecraft.util.Identifier;
 @Environment(EnvType.CLIENT)
 public class TexturedCyclingButtonWidget<T> extends TexturedButtonWidget {
 
-    // private SimpleOption.TooltipFactory<T> tooltipFactory;
+    private SimpleOption.TooltipFactory<T> tooltipFactory;
     private Function<T, Integer> uOffsetFactory;
 
     public T state;
@@ -26,14 +26,21 @@ public class TexturedCyclingButtonWidget<T> extends TexturedButtonWidget {
             Consumer<TexturedCyclingButtonWidget<T>> pressAction, SimpleOption.TooltipFactory<T> tooltipFactory, Function<T, Integer> uOffsetFactory) {
             super(x, y, width, height, u, v, hoveredVOffset, texture, textureWidth, textureHeight, button -> pressAction.accept((TexturedCyclingButtonWidget<T>)button), ScreenTexts.EMPTY);
         
-        // this.tooltipFactory = tooltipFactory;
+        this.tooltipFactory = tooltipFactory;
         this.uOffsetFactory = uOffsetFactory;
         this.state = state;
+        this.refreshTooltip();
+        this.setTooltipDelay(700);
     }
-
+    
     @Override
     public void renderButton(DrawContext context, int mouseX, int mouseY, float delta) {
         this.drawTexture(context, this.texture, this.getX(), this.getY(), this.u + this.uOffsetFactory.apply(state), this.v, this.hoveredVOffset,
                 this.width, this.height, this.textureWidth, this.textureHeight);
     }
+
+    public void refreshTooltip(){
+        this.setTooltip(this.tooltipFactory.apply(state));
+    }
+
 }

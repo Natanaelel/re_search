@@ -16,6 +16,7 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.tooltip.Tooltip;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 
 @Environment(EnvType.CLIENT)
@@ -50,10 +51,20 @@ public class SearchScreen extends Screen {
         setInitialFocus(searchBox);
         addDrawableChild(searchBox);
 
+
         
         this.addDrawableChild(new TexturedCyclingButtonWidget<CaseSensitivity>(Config.isCaseSensitive ? CaseSensitivity.SENSITIVE : CaseSensitivity.INSENSITIVE,
                 width / 2 - 61, y + 30, 20, 20, 0, 0, 20, 256, 256, WIDGET_TEXTURE, this::onCaseSensitiveButtonPress,
-                mode -> Tooltip.of(mode.info), mode -> mode.uOffset));
+                mode -> Tooltip.of(mode.name.copy().append(Text.empty().append("\n").append(mode.info).formatted(Formatting.DARK_GRAY))), mode -> mode.uOffset));
+
+        this.addDrawableChild(new TexturedCyclingButtonWidget<SearchMode>(SearchMode.values()[Config.searchMode],
+                width / 2 + 41, y + 30, 20, 20, 0, 0, 20, 256, 256, WIDGET_TEXTURE, button -> {
+                    Config.searchMode = (Config.searchMode + 1) % 3;
+                    Config.markDirty();
+                    button.state = SearchMode.values()[Config.searchMode];
+                    button.refreshTooltip();
+                },
+                mode -> Tooltip.of(mode.name.copy().append(Text.empty().append("\n").append(mode.info).formatted(Formatting.DARK_GRAY))), mode -> mode.uOffset));
     }
 
     @Override
@@ -65,12 +76,12 @@ public class SearchScreen extends Screen {
                 WorldRendering.clearMarkedInventories();
             } else {
                 ClientPlayNetworking.send(NetworkingConstants.ITEM_SEARCH_PACKET_ID,
-                        ItemSearchPacketC2S.createPackedByteBuf(new SearchOptions(searchBox.getText(), Config.isCaseSensitive)));
+                        ItemSearchPacketC2S.createPackedByteBuf(new SearchOptions(searchBox.getText(), Config.isCaseSensitive, Config.searchMode)));
             }
             close();
             return true;
         }
-
+        
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
@@ -84,7 +95,7 @@ public class SearchScreen extends Screen {
     @Override
     public void tick() {
         searchBox.tick();
-        this.setFocused(searchBox);
+        // this.setFocused(searchBox);
 
     }
 
@@ -98,6 +109,7 @@ public class SearchScreen extends Screen {
         Config.markDirty();
 
         button.state = Config.isCaseSensitive ? CaseSensitivity.SENSITIVE : CaseSensitivity.INSENSITIVE;
+        button.refreshTooltip();
     }
 
 }
@@ -113,6 +125,22 @@ enum CaseSensitivity {
     private CaseSensitivity(String mode, int uOffset) {
         this.name = Text.translatable("option.re_search.case_sensitivity." + mode);
         this.info = Text.translatable("description.re_search.case_sensitivity." + mode);
+        this.uOffset = uOffset;
+    }
+}
+
+enum SearchMode {
+    REGEX("regex", 40),
+    LITERAL("literal", 60),
+    EXTENDED("extended", 80);
+
+    public final Text name;
+    public final Text info;
+    public final int uOffset;
+
+    private SearchMode(String mode, int uOffset) {
+        this.name = Text.translatable("option.re_search.search_mode." + mode);
+        this.info = Text.translatable("description.re_search.search_mode." + mode);
         this.uOffset = uOffset;
     }
 }
