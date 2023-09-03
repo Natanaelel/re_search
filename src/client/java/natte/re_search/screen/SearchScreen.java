@@ -50,8 +50,9 @@ public class SearchScreen extends Screen {
         searchBox = new TextFieldWidget(textRenderer, x, y, boxWidth, boxHeight, text);
         setInitialFocus(searchBox);
         addDrawableChild(searchBox);
+        SyntaxHighlighter highlighter = new SyntaxHighlighter(this.client);
 
-
+        searchBox.setRenderTextProvider(highlighter::provideRenderText);
         
         this.addDrawableChild(new TexturedCyclingButtonWidget<CaseSensitivity>(Config.isCaseSensitive ? CaseSensitivity.SENSITIVE : CaseSensitivity.INSENSITIVE,
                 width / 2 - 61, y + 30, 20, 20, 0, 0, 20, 256, 256, WIDGET_TEXTURE, this::onCaseSensitiveButtonPress,

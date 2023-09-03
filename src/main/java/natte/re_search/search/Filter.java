@@ -34,18 +34,21 @@ public class Filter {
 
         }
         else if(searchOptions.searchMode == 1){
-            // TODO: literal search
-            System.err.println("Not Yet implemented literal search");
+            String string = searchOptions.expression;
+            addAlternative(name(string));
+            addAlternative(mod(string));
+            addAlternative(id(string));
+            addAlternative(tag(string));
+            addAlternative(tooltip(string));
         }
         if (searchOptions.searchMode == 2) {
-            String[] words = this.searchOptions.expression.split(" ");
+            String[] words = searchOptions.expression.split(" ");
             for (String word : words) {
                 if (word.length() == 0)
                     continue;
                 add(parseWord(word));
             }
         }
-        System.out.println(searchOptions.searchMode);
     }
 
     private Predicate<ItemStack> parseWord(String word) {
@@ -78,6 +81,10 @@ public class Filter {
 
     private void add(Predicate<ItemStack> predicate) {
         this.predicate = this.predicate.and(predicate);
+    }
+
+    private void addAlternative(Predicate<ItemStack> predicate){
+        this.predicate = this.predicate.or(predicate);
     }
 
     public Predicate<ItemStack> mod(String string) {

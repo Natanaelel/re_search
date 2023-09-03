@@ -90,7 +90,7 @@ public class RegexSearch implements ModInitializer {
 		return CommandManager.literal(command).requires(source -> source.hasPermissionLevel(2))
 				.executes(context -> {
 					Config.read();
-					context.getSource().sendMessage(Text.of("reloaded config"));
+					context.getSource().sendMessage(Text.translatableWithFallback("config.re_search.reloaded", "Reloaded config"));
 					return Command.SINGLE_SUCCESS;
 				});
 	}

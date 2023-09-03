@@ -13,6 +13,6 @@
     "option.re_search.search_mode.literal": "Literal search",
     "description.re_search.search_mode.literal": "Search for literal text",
     "option.re_search.search_mode.extended": "Extended search",
-    "description.re_search.search_mode.extended": "Search using extended notation"
-    
+    "description.re_search.search_mode.extended": "Search using extended notation",
+    "config.re_search.reloaded": "Reloaded config"
 }

@@ -1,17 +1,18 @@
 {
 	"schemaVersion": 1,
 	"id": "re_search",
-	"version": "${version}",
+	"version": "0.1.0",
 	"name": "Regex Search",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "Search for items in the world using different search modes.",
 	"authors": [
-		"Me!"
+		"Natte"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://github.com/Natanaelel/re_search",
+		"sources": "https://github.com/Natanaelel/re_search",
+		"issues": "https://github.com/Natanaelel/re_search/issues"
 	},
-	"license": "CC0-1.0",
+	"license": "MIT",
 	"icon": "assets/re_search/icon.png",
 	"environment": "*",
 	"entrypoints": {
@@ -22,20 +23,12 @@
 			"natte.re_search.RegexSearchClient"
 		]
 	},
-	"mixins": [
-		"re_search.mixins.json",
-		{
-			"config": "re_search.client.mixins.json",
-			"environment": "client"
-		}
-	],
+	"mixins": [],
 	"depends": {
 		"fabricloader": ">=0.14.22",
 		"minecraft": "~1.20.1",
 		"java": ">=17",
 		"fabric-api": "*"
 	},
-	"suggests": {
-		"another-mod": "*"
-	}
+	"suggests": {}
 }

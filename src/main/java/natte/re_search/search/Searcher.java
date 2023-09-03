@@ -11,6 +11,7 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.CampfireBlockEntity;
 import net.minecraft.block.entity.LecternBlockEntity;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.decoration.ItemFrameEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -30,41 +31,46 @@ import net.minecraft.world.World;
 
 public class Searcher {
 
+    private static int totalItems;
 
     public static List<MarkedInventory> search(SearchOptions searchOptions, ServerPlayerEntity playerEntity) {
 
-
         List<MarkedInventory> inventories = new ArrayList<>();
+        totalItems = 0;
 
         PlayerEntity player = playerEntity;
         World world = player.getWorld();
 
         Filter filter = new Filter(searchOptions, playerEntity);
-     
-        for (BlockPos blockPos : BlockPos.iterateOutwards(player.getBlockPos(), Config.range, Config.range,
-                Config.range)) {
+        int range = Config.range;
+        if (Config.searchBlocks) {
+            for (BlockPos blockPos : BlockPos.iterateOutwards(player.getBlockPos(), range, range, range)) {
+                if (inventories.size() == Config.maxInventories)
+                    break;
+                MarkedInventory markedInventory = new MarkedInventory(blockPos.toImmutable());
+                search(blockPos, world, filter, markedInventory, Config.recursionLimit);
 
-            MarkedInventory markedInventory = new MarkedInventory(blockPos.toImmutable());
-            search(blockPos, world, filter, markedInventory, Config.recursionLimit);
+                if (!markedInventory.isEmpty()) {
+                    inventories.add(markedInventory);
+                }
 
-            if (!markedInventory.isEmpty()) {
-                inventories.add(markedInventory);
             }
-
         }
 
-        List<Entity> entities = world.getOtherEntities(player,
-                new Box(player.getBlockPos().add(Config.range, Config.range, Config.range),
-                        player.getBlockPos().add(-Config.range, -Config.range, -Config.range)),
-                entity -> true);
+        if (Config.searchEntities) {
+            List<Entity> entities = world.getOtherEntities(player,
+                    Box.of(player.getPos(), range * 2, range * 2, range * 2));
 
-        for (Entity entity : entities) {
+            for (Entity entity : entities) {
+                if (inventories.size() == Config.maxInventories)
+                    break;
 
-            MarkedInventory markedInventory = new MarkedInventory(entity.getBlockPos());
-            search(entity, filter, markedInventory, Config.recursionLimit);
+                MarkedInventory markedInventory = new MarkedInventory(entity.getBlockPos());
+                search(entity, filter, markedInventory, Config.recursionLimit);
 
-            if (!markedInventory.isEmpty()) {
-                inventories.add(markedInventory);
+                if (!markedInventory.isEmpty()) {
+                    inventories.add(markedInventory);
+                }
             }
         }
 
@@ -73,6 +79,11 @@ public class Searcher {
 
     private static boolean search(ItemStack itemStack, Filter predicate, MarkedInventory markedInventory,
             int recursionDepth) {
+        if (markedInventory.inventory.size() == Config.maxSearchResultsPerInventory)
+            return false;
+        if (totalItems == Config.maxSearchResults)
+            return false;
+
 
         if (recursionDepth == 0)
             return false;
@@ -81,6 +92,7 @@ public class Searcher {
         boolean itemStackMatches = predicate.test(itemStack);
         if (itemStackMatches) {
             markedInventory.inventory.add(itemStack);
+            ++totalItems;
         }
 
         // shulkerbox
@@ -149,7 +161,6 @@ public class Searcher {
                     foundAny = true;
             }
 
-
         }
 
         // campfire
@@ -162,9 +173,6 @@ public class Searcher {
             }
         }
 
-
-
-
         if (foundAny)
             markedInventory.addContainer(blockState.getBlock().asItem().getDefaultStack());
 
@@ -176,6 +184,14 @@ public class Searcher {
         if (recursionDepth == 0)
             return false;
         boolean foundAny = false;
+
+        // item entity
+        if (entity instanceof ItemEntity itemEntity) {
+
+            if (search(itemEntity.getStack(), predicate, markedInventory, recursionDepth - 1)) {
+                foundAny = true;
+            }
+        }
 
         // item frame
         if (entity instanceof ItemFrameEntity itemFrame) {
@@ -198,13 +214,12 @@ public class Searcher {
             if (foundAny) {
                 markedInventory.addContainer(Items.ARMOR_STAND.getDefaultStack());
             }
-        }
-        else if (entity instanceof VehicleInventory vehicleInventory){
+        } else if (entity instanceof VehicleInventory vehicleInventory) {
             for (ItemStack itemStack : vehicleInventory.getInventory()) {
                 if (search(itemStack, predicate, markedInventory, recursionDepth - 1))
                     foundAny = true;
             }
-            if(foundAny)
+            if (foundAny)
                 markedInventory.addContainer(entity.getPickBlockStack());
         }
         return foundAny;
