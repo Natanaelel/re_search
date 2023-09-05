@@ -24,22 +24,25 @@ public class Filter {
     }
 
     private void parseFilterExpression() {
-        if(searchOptions.searchMode == 0){
-            Pattern pattern = Pattern.compile(searchOptions.expression, searchOptions.isCaseSensitive ? 0 : Pattern.CASE_INSENSITIVE);
+        if (searchOptions.searchMode == 0) {
+            Pattern pattern = Pattern.compile(searchOptions.expression,
+                    searchOptions.isCaseSensitive ? 0 : Pattern.CASE_INSENSITIVE);
 
             add(itemStack -> {
                 String name = itemStack.getItem().getName().getString();
                 return pattern.matcher(name).find();
             });
 
-        }
-        else if(searchOptions.searchMode == 1){
+        } else if (searchOptions.searchMode == 1) {
             String string = searchOptions.expression;
-            addAlternative(name(string));
-            addAlternative(mod(string));
-            addAlternative(id(string));
-            addAlternative(tag(string));
-            addAlternative(tooltip(string));
+            Predicate<String> predicate = StringMatcher.overCaseFold((a, b) -> b.contains(a),
+                    this.searchOptions.isCaseSensitive, string);
+            Predicate<ItemStack> p = name(predicate);
+            p = p.or(mod(predicate));
+            p = p.or(id(predicate));
+            p = p.or(tag(predicate));
+            p = p.or(tooltip(predicate));
+            add(p);
         }
         if (searchOptions.searchMode == 2) {
             String[] words = searchOptions.expression.split(" ");
@@ -52,27 +55,31 @@ public class Filter {
     }
 
     private Predicate<ItemStack> parseWord(String word) {
-        if (word.length() == 0)
+        if (word.length() == 0) {
             return itemStack -> true;
+        }
         char c = word.charAt(0);
         String string = word.substring(1);
-        if (c == '@') {
-            return mod(string.toLowerCase());
-        }
-        if (c == '*') {
-            return id(string.toLowerCase());
-        }
-        if (c == '$') {
-            return tag(string.toLowerCase());
-        }
-        if (c == '#') {
-            return tooltip(string);
-        }
         if (c == '-') {
             return negate(parseWord(string));
-        } else {
-            return name(word);
         }
+        Predicate<String> predicate = StringMatcher.preparePredicate(string, this.searchOptions);
+
+        if (c == '@') {
+            return string.contains(":") ? modColonId(predicate) : mod(predicate);
+        }
+        if (c == '*') {
+            return id(predicate);
+        }
+        if (c == '$') {
+            return string.contains(":") ? tagColonId(predicate) : tag(predicate);
+        }
+        if (c == '#') {
+            return tooltip(predicate);
+        } else {
+            return name(StringMatcher.preparePredicate(word, this.searchOptions));
+        }
+
     }
 
     public boolean test(ItemStack itemStack) {
@@ -83,49 +90,39 @@ public class Filter {
         this.predicate = this.predicate.and(predicate);
     }
 
-    private void addAlternative(Predicate<ItemStack> predicate){
-        this.predicate = this.predicate.or(predicate);
-    }
-
-    public Predicate<ItemStack> mod(String string) {
-        // @mod:item
-        if (string.contains(":")) {
-            return itemStack -> Registries.ITEM.getId(itemStack.getItem()).toString().contains(string);
-        }
+    public Predicate<ItemStack> mod(Predicate<String> predicate) {
         // @mod
-        return itemStack -> Registries.ITEM.getId(itemStack.getItem()).getNamespace().contains(string);
+        return itemStack -> predicate.test(Registries.ITEM.getId(itemStack.getItem()).getNamespace());
     }
 
-    public Predicate<ItemStack> id(String string) {
+    public Predicate<ItemStack> modColonId(Predicate<String> predicate) {
+        // @mod:item
+        return itemStack -> predicate.test(Registries.ITEM.getId(itemStack.getItem()).toString());
+    }
+
+    public Predicate<ItemStack> id(Predicate<String> predicate) {
         // *item
-        return itemStack -> Registries.ITEM.getId(itemStack.getItem()).getPath().contains(string);
+        return itemStack -> predicate.test(Registries.ITEM.getId(itemStack.getItem()).getPath());
     }
 
-    public Predicate<ItemStack> tag(String string) {
-        // $mod:tag
-        if (string.contains(":")) {
-            return itemStack -> itemStack.streamTags().anyMatch(tag -> tag.id().toString().contains(string));
-        }
+    public Predicate<ItemStack> tag(Predicate<String> predicate) {
         // $tag
-        return itemStack -> itemStack.streamTags().anyMatch(tag -> tag.id().getPath().contains(string));
+        return itemStack -> itemStack.streamTags().anyMatch(tag -> predicate.test(tag.id().getPath()));
     }
 
-    public Predicate<ItemStack> tooltip(String string) {
-        if (searchOptions.isCaseSensitive) {
-            return itemStack -> itemStack.getTooltip(player, TooltipContext.ADVANCED).stream()
-                    .anyMatch(line -> line.getString().contains(string));
-        } else {
-            return itemStack -> itemStack.getTooltip(player, TooltipContext.ADVANCED).stream()
-                    .anyMatch(line -> line.getString().toLowerCase().contains(string.toLowerCase()));
-        }
+    public Predicate<ItemStack> tagColonId(Predicate<String> predicate) {
+        // $mod:tag
+        return itemStack -> itemStack.streamTags().anyMatch(tag -> predicate.test(tag.id().toString()));
     }
 
-    public Predicate<ItemStack> name(String string) {
-        if (searchOptions.isCaseSensitive) {
-            return itemStack -> itemStack.getName().getString().contains(string);
-        } else {
-            return itemStack -> itemStack.getName().getString().toLowerCase().contains(string.toLowerCase());
-        }
+    public Predicate<ItemStack> tooltip(Predicate<String> predicate) {
+        return itemStack -> itemStack.getTooltip(player, TooltipContext.ADVANCED).stream()
+                .anyMatch(line -> predicate.test(line.getString()));
+
+    }
+
+    public Predicate<ItemStack> name(Predicate<String> predicate) {
+        return itemStack -> predicate.test(itemStack.getName().getString());
     }
 
     public Predicate<ItemStack> negate(Predicate<ItemStack> predicate) {
