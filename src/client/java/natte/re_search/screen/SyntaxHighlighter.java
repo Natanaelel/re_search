@@ -28,7 +28,7 @@ public class SyntaxHighlighter {
         boolean isSpaceStyle = true;
         styledChars.clear();
         for (char c : string.toCharArray()) {
-            boolean special = (!isSpaceStyle) && (c == '^' || c == '$');
+            boolean special = (!isSpaceStyle && c == '$') || c == '^';
             boolean isNegate = isSpaceStyle && c == '-';
 
             if (isSpaceStyle) {
@@ -48,7 +48,8 @@ public class SyntaxHighlighter {
                 else {
                     style = NAME_STYLE;
                 }
-            } else if (c == ' ') {
+            }
+            if (c == ' ') {
                 style = SPACE_STYLE;
                 isSpaceStyle = true;
                 isNegate = false;
