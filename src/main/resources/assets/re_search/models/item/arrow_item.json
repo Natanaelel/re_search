@@ -1,6 +1,0 @@
-{
-    "parent": "item/generated",
-    "textures": {
-      "layer0": "re_search:item/arrow_light"
-    }
-}

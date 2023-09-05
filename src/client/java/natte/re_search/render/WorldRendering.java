@@ -3,6 +3,10 @@ package natte.re_search.render;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.joml.Matrix4f;
+
+import com.mojang.blaze3d.systems.RenderSystem;
+
 import natte.re_search.RegexSearch;
 import natte.re_search.search.MarkedInventory;
 import net.fabricmc.api.EnvType;
@@ -10,13 +14,19 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.OverlayTexture;
+import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.render.VertexFormat;
+import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.render.item.ItemRenderer;
 import net.minecraft.client.render.model.json.ModelTransformationMode;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RotationAxis;
@@ -80,6 +90,7 @@ public class WorldRendering {
                 matrixStack.translate(0, 0, distance-0.25f);
                 
                 float scale = 0.15f / distance;
+                scale = Math.max(scale, (scale - 0.02f) * 0.7f + 0.02f);
 
                 // float smoothing = 100f;
                 // smoothing = client.player.headYaw;
@@ -115,7 +126,7 @@ public class WorldRendering {
             matrixStack.push();
             {
                 Vec3d transformedPosition = relativeBlockPosition.add(0.5, 0.5, 0.5);
-
+                
                 // move item to block pos
                 matrixStack.translate(transformedPosition.x, transformedPosition.y, transformedPosition.z);
 
@@ -135,7 +146,27 @@ public class WorldRendering {
 
                 matrixStack.translate(0f, 0.8f, 0f);
 
-                itemRenderer.renderItem(new ItemStack(RegexSearch.ARROW_ITEM), ModelTransformationMode.GUI, 255, OverlayTexture.DEFAULT_UV, matrixStack, vertexConsumers, client.world, 0);
+                Matrix4f positionMatrix = matrixStack.peek().getPositionMatrix();
+                Tessellator tessellator = Tessellator.getInstance();
+                BufferBuilder buffer = tessellator.getBuffer();
+            
+                buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE);
+                buffer.vertex(positionMatrix, -0.5f, 0.5f, 0).color(0xffffffff).texture(0f, 0f).next();
+                buffer.vertex(positionMatrix, -0.5f, -0.5f, 0).color(0xffffffff).texture(0f, 1f).next();
+                buffer.vertex(positionMatrix, 0.5f, -0.5f, 0).color(0xffffffff).texture(1f, 1f).next();
+                buffer.vertex(positionMatrix, 0.5f, 0.5f, 0).color(0xffffffff).texture(1f, 0f).next();
+            
+                RenderSystem.setShader(GameRenderer::getPositionColorTexProgram);
+                RenderSystem.setShaderTexture(0, new Identifier(RegexSearch.MOD_ID, "textures/arrow_light.png"));
+                RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+                // RenderSystem.disableCull();
+                // RenderSystem.depthFunc(GL11.GL_ALWAYS);
+            
+                tessellator.draw();
+            
+                // RenderSystem.depthFunc(GL11.GL_LEQUAL);
+                // RenderSystem.enableCull();
+                        
             }
             matrixStack.pop();
             
@@ -169,7 +200,9 @@ public class WorldRendering {
 
                     matrixStack.translate(x * 1.125f - inventory.containers.size() / 2f + 0.5f- 0.125f*inventory.containers.size()/2+0.0625, 0f, 0f);
                     itemRenderer.renderItem(itemStack, ModelTransformationMode.GUI, 0xff, OverlayTexture.DEFAULT_UV, matrixStack, vertexConsumers, client.world, 0);
-                
+                    
+                    
+
                     matrixStack.pop();
                 }
             }
