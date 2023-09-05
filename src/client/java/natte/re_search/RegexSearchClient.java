@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import natte.re_search.network.ItemSearchResultPacketS2C;
-import natte.re_search.network.NetworkingConstants;
 import natte.re_search.render.WorldRendering;
 import natte.re_search.screen.SearchScreen;
 import natte.re_search.search.MarkedInventory;
@@ -33,7 +32,7 @@ public class RegexSearchClient implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
-		ClientPlayNetworking.registerGlobalReceiver(NetworkingConstants.ITEM_SEARCH_RESULT_PACKET_ID, (client, handler, packet, responseSender) -> RegexSearchClient.onItemSearchResult(packet));
+		ClientPlayNetworking.registerGlobalReceiver(ItemSearchResultPacketS2C.PACKET_ID, (client, handler, packet, responseSender) -> RegexSearchClient.onItemSearchResult(packet));
 		
 		registerKeyBinds();
 		

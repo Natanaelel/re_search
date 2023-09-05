@@ -5,7 +5,6 @@ import org.lwjgl.glfw.GLFW;
 import natte.re_search.RegexSearch;
 import natte.re_search.config.Config;
 import natte.re_search.network.ItemSearchPacketC2S;
-import natte.re_search.network.NetworkingConstants;
 import natte.re_search.render.WorldRendering;
 import natte.re_search.search.SearchOptions;
 import net.fabricmc.api.EnvType;
@@ -48,12 +47,15 @@ public class SearchScreen extends Screen {
         Text text = Text.of("");
 
         searchBox = new TextFieldWidget(textRenderer, x, y, boxWidth, boxHeight, text);
+        searchBox.setMaxLength(100);
+        
         setInitialFocus(searchBox);
         addDrawableChild(searchBox);
-        SyntaxHighlighter highlighter = new SyntaxHighlighter(this.client);
 
+        SyntaxHighlighter highlighter = new SyntaxHighlighter();
         searchBox.setRenderTextProvider(highlighter::provideRenderText);
-        
+        searchBox.setChangedListener(highlighter::refresh);
+
         this.addDrawableChild(new TexturedCyclingButtonWidget<CaseSensitivity>(Config.isCaseSensitive ? CaseSensitivity.SENSITIVE : CaseSensitivity.INSENSITIVE,
                 width / 2 - 61, y + 30, 20, 20, 0, 0, 20, 256, 256, WIDGET_TEXTURE, this::onCaseSensitiveButtonPress,
                 mode -> Tooltip.of(mode.name.copy().append(Text.empty().append("\n").append(mode.info).formatted(Formatting.DARK_GRAY))), mode -> mode.uOffset));
@@ -76,7 +78,7 @@ public class SearchScreen extends Screen {
             if (text.isEmpty()) {
                 WorldRendering.clearMarkedInventories();
             } else {
-                ClientPlayNetworking.send(NetworkingConstants.ITEM_SEARCH_PACKET_ID,
+                ClientPlayNetworking.send(ItemSearchPacketC2S.PACKET_ID,
                         ItemSearchPacketC2S.createPackedByteBuf(new SearchOptions(searchBox.getText(), Config.isCaseSensitive, Config.searchMode)));
             }
             close();

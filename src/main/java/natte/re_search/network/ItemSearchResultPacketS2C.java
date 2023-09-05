@@ -3,13 +3,18 @@ package natte.re_search.network;
 import java.util.ArrayList;
 import java.util.List;
 
+import natte.re_search.RegexSearch;
 import natte.re_search.search.MarkedInventory;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 
 public class ItemSearchResultPacketS2C {
+
+    public static final Identifier PACKET_ID = new Identifier(RegexSearch.MOD_ID, "item_search_result");
+
     public static PacketByteBuf createPackedByteBuf(List<MarkedInventory> inventories) {
         PacketByteBuf packet = PacketByteBufs.create();
         

@@ -28,8 +28,8 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 
 import natte.re_search.config.Config;
+import natte.re_search.network.ItemSearchPacketC2S;
 import natte.re_search.network.ItemSearchResultPacketS2C;
-import natte.re_search.network.NetworkingConstants;
 import natte.re_search.search.MarkedInventory;
 import natte.re_search.search.SearchOptions;
 import natte.re_search.search.Searcher;
@@ -52,7 +52,7 @@ public class RegexSearch implements ModInitializer {
 		Registry.register(Registries.ITEM, new Identifier(MOD_ID, "arrow_item"), ARROW_ITEM);
 
 		ServerPlayConnectionEvents.INIT.register((handler, server) -> {
-			ServerPlayNetworking.registerReceiver(handler, NetworkingConstants.ITEM_SEARCH_PACKET_ID,
+			ServerPlayNetworking.registerReceiver(handler, ItemSearchPacketC2S.PACKET_ID,
 					RegexSearch::receive);
 		});
 
@@ -69,7 +69,7 @@ public class RegexSearch implements ModInitializer {
 			List<MarkedInventory> inventories = Searcher.search(searchOptions, player);
 			
 			PacketByteBuf packet = ItemSearchResultPacketS2C.createPackedByteBuf(inventories);
-			responseSender.sendPacket(NetworkingConstants.ITEM_SEARCH_RESULT_PACKET_ID, packet);
+			responseSender.sendPacket(ItemSearchResultPacketS2C.PACKET_ID, packet);
 			
 			if(inventories.isEmpty()){
 				player.sendMessage( net.minecraft.text.Text.translatable("popup.re_search.no_matching_items_found"), true);

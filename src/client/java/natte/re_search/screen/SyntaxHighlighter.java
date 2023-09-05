@@ -2,88 +2,61 @@ package natte.re_search.screen;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.ParseResults;
-import com.mojang.brigadier.StringReader;
-import com.mojang.brigadier.context.CommandContextBuilder;
-import com.mojang.brigadier.context.ParsedArgument;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.ChatInputSuggestor;
-import net.minecraft.command.CommandSource;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Style;
-import net.minecraft.util.Formatting;
 
 public class SyntaxHighlighter {
 
-    private static final Pattern WHITESPACE_PATTERN = Pattern.compile("(\\s+)");
-    private static final Style ERROR_STYLE = Style.EMPTY.withColor(Formatting.RED);
-    private static final Style INFO_STYLE = Style.EMPTY.withColor(Formatting.GRAY);
-    private static final List<Style> HIGHLIGHT_STYLES = Stream.of(Formatting.AQUA, Formatting.YELLOW, Formatting.GREEN, Formatting.LIGHT_PURPLE, Formatting.GOLD).map(arg_0 -> ((Style)Style.EMPTY).withColor(arg_0)).collect(ImmutableList.toImmutableList());
-    
-    private ParseResults<CommandSource> parse;
-    private MinecraftClient client;
+    private static final Style SPACE_STYLE = Style.EMPTY;
+    private static final Style NAME_STYLE = Style.EMPTY;
+    private static final Style ID_STYLE = Style.EMPTY.withColor(0x8d7eed);
+    private static final Style MOD_STYLE = Style.EMPTY.withColor(0xffa8f3);
+    private static final Style TOOLTIP_STYLE = Style.EMPTY.withColor(0xffe0ad);
+    private static final Style TAG_STYLE = Style.EMPTY.withColor(0x9efff4);
+    private static final Style SPECIAL_STYLE = Style.EMPTY.withColor(0xf6bf57);
+    private static final Style NEGATE_STYLE = Style.EMPTY.withColor(0xe43b3b);
 
-
-    public SyntaxHighlighter(MinecraftClient client){
-        this.client = client;
-    }
-
-    public void init(String string){
-        StringReader stringReader = new StringReader(string);
-        CommandDispatcher<CommandSource> commandDispatcher = this.client.player.networkHandler.getCommandDispatcher();
-        if (this.parse == null) {
-            this.parse = commandDispatcher.parse(stringReader, (CommandSource)this.client.player.networkHandler.getCommandSource());
-        }
-
-    }
+    private List<OrderedText> styledChars = new ArrayList<>();
 
     public OrderedText provideRenderText(String original, int firstCharacterIndex) {
-        if (this.parse != null) {
-            return SyntaxHighlighter.highlight(this.parse, original, firstCharacterIndex);
-        }
-        this.init(original);
-        return OrderedText.styledForwardsVisitedString((String)original, (Style)Style.EMPTY);
+        return OrderedText.concat(styledChars.subList(firstCharacterIndex, firstCharacterIndex + original.length()));
     }
 
+    public void refresh(String string) {
 
-    private static OrderedText highlight(ParseResults<CommandSource> parse, String original, int firstCharacterIndex) {
-        int m;
-        ArrayList<OrderedText> list = Lists.newArrayList();
-        int i = 0;
-        int j = -1;
-        CommandContextBuilder<CommandSource> commandContextBuilder = parse.getContext().getLastChild();
-        for (ParsedArgument<CommandSource, ?> parsedArgument : commandContextBuilder.getArguments().values()) {
-            int k;
-            if (++j >= HIGHLIGHT_STYLES.size()) {
-                j = 0;
+        Style style = SPACE_STYLE;
+        boolean isSpaceStyle = true;
+        styledChars.clear();
+        for (char c : string.toCharArray()) {
+            boolean special = (!isSpaceStyle) && (c == '^' || c == '$');
+            boolean isNegate = isSpaceStyle && c == '-';
+
+            if (isSpaceStyle) {
+                isSpaceStyle = false;
+                if (c == '@') {
+                    style = MOD_STYLE;
+                } else if (c == '*') {
+                    style = ID_STYLE;
+                } else if (c == '#') {
+                    style = TOOLTIP_STYLE;
+                } else if (c == '$') {
+                    style = TAG_STYLE;
+                }else if(c == '-'){
+                    isNegate = true;
+                    isSpaceStyle = true;
+                } 
+                else {
+                    style = NAME_STYLE;
+                }
+            } else if (c == ' ') {
+                style = SPACE_STYLE;
+                isSpaceStyle = true;
+                isNegate = false;
             }
-            if ((k = Math.max(parsedArgument.getRange().getStart() - firstCharacterIndex, 0)) >= original.length())
-                break;
-            int l = Math.min(parsedArgument.getRange().getEnd() - firstCharacterIndex, original.length());
-            if (l <= 0)
-                continue;
-            list.add(OrderedText.styledForwardsVisitedString((String) original.substring(i, k), (Style) INFO_STYLE));
-            list.add(OrderedText.styledForwardsVisitedString((String) original.substring(k, l),
-                    (Style) HIGHLIGHT_STYLES.get(j)));
-            i = l;
+            styledChars.add(OrderedText.styledForwardsVisitedString(String.valueOf(c),
+                    special ? SPECIAL_STYLE : isNegate ? NEGATE_STYLE : style));
+
         }
-        if (parse.getReader().canRead()
-                && (m = Math.max(parse.getReader().getCursor() - firstCharacterIndex, 0)) < original.length()) {
-            int n = Math.min(m + parse.getReader().getRemainingLength(), original.length());
-            list.add(OrderedText.styledForwardsVisitedString((String) original.substring(i, m), (Style) INFO_STYLE));
-            list.add(OrderedText.styledForwardsVisitedString((String) original.substring(m, n), (Style) ERROR_STYLE));
-            i = n;
-        }
-        list.add(OrderedText.styledForwardsVisitedString((String) original.substring(i), (Style) INFO_STYLE));
-        return OrderedText.concat(list);
     }
 
 }
