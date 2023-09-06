@@ -18,11 +18,22 @@ public class SyntaxHighlighter {
 
     private List<OrderedText> styledChars = new ArrayList<>();
 
+    private int searchMode = 0;
+
     public OrderedText provideRenderText(String original, int firstCharacterIndex) {
         return OrderedText.concat(styledChars.subList(firstCharacterIndex, firstCharacterIndex + original.length()));
     }
 
     public void refresh(String string) {
+
+        // searchMode != extended, dont highlight
+        if(searchMode != 2){
+            styledChars.clear();
+             for (char c : string.toCharArray()) {
+                styledChars.add(OrderedText.styledForwardsVisitedString(String.valueOf(c), Style.EMPTY));
+             }
+            return;
+        }
 
         Style style = SPACE_STYLE;
         boolean isSpaceStyle = true;
@@ -58,6 +69,10 @@ public class SyntaxHighlighter {
                     special ? SPECIAL_STYLE : isNegate ? NEGATE_STYLE : style));
 
         }
+    }
+
+    public void setMode(int searchMode){
+        this.searchMode = searchMode;
     }
 
 }

@@ -40,7 +40,7 @@ public class RegexSearch implements ModInitializer {
 	public void onInitialize() {
 
 		Config.init(Config.class);
-	
+
 		ServerPlayConnectionEvents.INIT.register((handler, server) -> {
 			ServerPlayNetworking.registerReceiver(handler, ItemSearchPacketC2S.PACKET_ID,
 					RegexSearch::receive);
@@ -50,25 +50,27 @@ public class RegexSearch implements ModInitializer {
 
 	}
 
-	private static void receive(MinecraftServer server, ServerPlayerEntity player, ServerPlayNetworkHandler handler, PacketByteBuf buf, PacketSender responseSender) {
-		
+	private static void receive(MinecraftServer server, ServerPlayerEntity player, ServerPlayNetworkHandler handler,
+			PacketByteBuf buf, PacketSender responseSender) {
+
 		// String expression = buf.readString();
 		SearchOptions searchOptions = SearchOptions.readPacketByteBuf(buf);
 
 		server.execute(() -> {
 			List<MarkedInventory> inventories = Searcher.search(searchOptions, player);
-			
+
 			PacketByteBuf packet = ItemSearchResultPacketS2C.createPackedByteBuf(inventories);
 			responseSender.sendPacket(ItemSearchResultPacketS2C.PACKET_ID, packet);
-			
-			if(inventories.isEmpty()){
-				player.sendMessage( net.minecraft.text.Text.translatable("popup.re_search.no_matching_items_found"), true);
+
+			if (inventories.isEmpty()) {
+				player.sendMessage(net.minecraft.text.Text.translatable("popup.re_search.no_matching_items_found"),
+						true);
 			}
 		});
 	}
 
 	private void registerCommands() {
-			CommandRegistrationCallback.EVENT.register(
+		CommandRegistrationCallback.EVENT.register(
 				(dispatcher, registryAccess, environment) -> dispatcher.register(
 						CommandManager.literal(MOD_ID)
 								.then(reloadConfigCommand("reload"))
@@ -80,7 +82,8 @@ public class RegexSearch implements ModInitializer {
 		return CommandManager.literal(command).requires(source -> source.hasPermissionLevel(2))
 				.executes(context -> {
 					Config.read();
-					context.getSource().sendMessage(Text.translatableWithFallback("config.re_search.reloaded", "Reloaded config"));
+					context.getSource()
+							.sendMessage(Text.translatableWithFallback("config.re_search.reloaded", "Reloaded config"));
 					return Command.SINGLE_SUCCESS;
 				});
 	}
@@ -88,7 +91,7 @@ public class RegexSearch implements ModInitializer {
 	private static LiteralArgumentBuilder<ServerCommandSource> showConfigCommand(String command) {
 		return CommandManager.literal(command).executes(RegexSearch::showConfig);
 	}
-	
+
 	private static int showConfig(CommandContext<ServerCommandSource> context) {
 		ServerCommandSource source = context.getSource();
 
@@ -100,7 +103,7 @@ public class RegexSearch implements ModInitializer {
 				value = field.get(null).toString();
 			} catch (Exception e) {
 			}
-			if(!field.getName().equals("configClass"))
+			if (!field.getName().equals("configClass"))
 				lines.add(field.getName() + ": " + value);
 		}
 
