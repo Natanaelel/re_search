@@ -9,6 +9,7 @@ import natte.re_search.render.WorldRendering;
 import natte.re_search.search.SearchOptions;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.TextFieldWidget;
@@ -92,11 +93,9 @@ public class SearchScreen extends Screen {
             if (text.isEmpty()) {
                 WorldRendering.clearMarkedInventories();
             } else {
-
-                ItemSearchPacketC2S
-                        .send(new SearchOptions(text, Config.isCaseSensitive, Config.searchMode,
-                                Config.searchBlocks, Config.searchEntities));
-
+                ClientPlayNetworking.send(ItemSearchPacketC2S.PACKET_ID, new SearchOptions(text, Config.isCaseSensitive, Config.searchMode,
+                                Config.searchBlocks, Config.searchEntities).createPacketByteBuf());
+  
                 searchHistory.add(text);
             }
             close();
