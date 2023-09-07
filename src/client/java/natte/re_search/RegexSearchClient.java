@@ -48,7 +48,7 @@ public class RegexSearchClient implements ClientModInitializer {
 	void registerKeyBinds() {
 
 		KeyBinding keyBinding = KeyBindingHelper.registerKeyBinding(
-				new KeyBinding("key.re_search.search", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_F,
+				new KeyBinding("key.re_search.search", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_Y,
 						"category.re_search.keybinds"));
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
