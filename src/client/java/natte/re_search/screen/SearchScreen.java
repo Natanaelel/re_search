@@ -27,11 +27,12 @@ public class SearchScreen extends Screen {
 
     private SyntaxHighlighter highlighter;
 
+    private static SearchHistory searchHistory = new SearchHistory(100);
+
     public SearchScreen(Screen parent, MinecraftClient client) {
         super(Text.translatable("screen.re_search.label"));
         this.parent = parent;
         this.client = client;
-        // searchModeButton
     }
 
     @Override
@@ -60,12 +61,27 @@ public class SearchScreen extends Screen {
                 CaseSensitivity.getSensitivity(Config.isCaseSensitive),
                 centerX - 61, centerY + 71, 20, 20, 20, WIDGET_TEXTURE, this::onCaseSensitiveButtonPress));
 
+        KeepMode keepMode = Config.keepLast ? Config.autoSelect ? KeepMode.HIGHLIGHT : KeepMode.KEEP : KeepMode.CLEAR;
         this.addDrawableChild(
-                new TexturedCyclingButtonWidget<SearchType>(SearchType.BOTH, centerX - 10, centerY + 71, 20,
+                new TexturedCyclingButtonWidget<KeepMode>(keepMode, centerX - 27, centerY + 71, 20,
+                        20, 20, WIDGET_TEXTURE, this::onKeepModeButtonPress));
+
+        SearchType searchType = Config.searchBlocks ? Config.searchEntities ? SearchType.BOTH : SearchType.BLOCKS : SearchType.ENTITIES;
+        this.addDrawableChild(
+                new TexturedCyclingButtonWidget<SearchType>(searchType, centerX + 7, centerY + 71, 20,
                         20, 20, WIDGET_TEXTURE, this::onSearchTypeButtonPress));
 
         this.addDrawableChild(new TexturedCyclingButtonWidget<SearchMode>(SearchMode.values()[Config.searchMode],
                 centerX + 41, centerY + 71, 20, 20, 20, WIDGET_TEXTURE, this::onSearchModeButtonPress));
+
+        searchHistory.resetPosition();
+        if (Config.keepLast) {
+            searchBox.setText(searchHistory.getPrevious());
+            if (Config.autoSelect) {
+                searchBox.setSelectionStart(searchBox.getText().length());
+                searchBox.setSelectionEnd(0);
+            }
+        }
     }
 
     @Override
@@ -76,11 +92,23 @@ public class SearchScreen extends Screen {
             if (text.isEmpty()) {
                 WorldRendering.clearMarkedInventories();
             } else {
+
                 ItemSearchPacketC2S
                         .send(new SearchOptions(text, Config.isCaseSensitive, Config.searchMode,
                                 Config.searchBlocks, Config.searchEntities));
+
+                searchHistory.add(text);
             }
             close();
+            return true;
+        }
+
+        if (keyCode == GLFW.GLFW_KEY_UP) {
+            searchBox.setText(searchHistory.getPrevious());
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_DOWN) {
+            searchBox.setText(searchHistory.getNext());
             return true;
         }
 
@@ -118,6 +146,17 @@ public class SearchScreen extends Screen {
 
         Config.searchBlocks = button.state.searchBlocks;
         Config.searchEntities = button.state.searchEntities;
+        Config.markDirty();
+
+        button.refreshTooltip();
+    }
+
+    private void onKeepModeButtonPress(TexturedCyclingButtonWidget<KeepMode> button){
+        button.state = button.state == KeepMode.CLEAR ? KeepMode.KEEP
+                : button.state == KeepMode.KEEP ? KeepMode.HIGHLIGHT : KeepMode.CLEAR;
+
+        Config.keepLast = button.state.keepLast;
+        Config.autoSelect = button.state.autoSelect;
         Config.markDirty();
 
         button.refreshTooltip();
@@ -172,8 +211,6 @@ enum CaseSensitivity implements CycleableOption {
     }
 }
 
-
-
 enum SearchType implements CycleableOption {
     BOTH("both", true, true, 0, 40),
     BLOCKS("blocks", true, false, 20, 40),
@@ -227,6 +264,47 @@ enum SearchMode implements CycleableOption {
     private SearchMode(String mode, int uOffset, int vOffset) {
         this.name = Text.translatable("option.re_search.search_mode." + mode);
         this.info = Text.translatable("description.re_search.search_mode." + mode);
+        this.uOffset = uOffset;
+        this.vOffset = vOffset;
+    }
+
+    public int uOffset() {
+        return this.uOffset;
+    }
+
+    public int vOffset() {
+        return this.vOffset;
+    }
+
+    public Text getName() {
+        return this.name;
+    }
+
+    public Text getInfo() {
+        return this.info;
+    }
+}
+
+enum KeepMode implements CycleableOption {
+    CLEAR("clear", false, false, 0, 120),
+    KEEP("keep", true, false, 20, 120),
+    HIGHLIGHT("keep_highlight", true, true, 40, 120);
+
+    public final boolean keepLast;
+    public final boolean autoSelect;
+
+
+    public final Text name;
+    public final Text info;
+    public final int uOffset;
+    public final int vOffset;
+
+    private KeepMode(String mode, boolean keepLast, boolean autoSelect, int uOffset, int vOffset) {
+        this.keepLast = keepLast;
+        this.autoSelect = autoSelect;
+
+        this.name = Text.translatable("option.re_search.keep_mode." + mode);
+        this.info = Text.translatable("description.re_search.keep_mode." + mode);
         this.uOffset = uOffset;
         this.vOffset = vOffset;
     }

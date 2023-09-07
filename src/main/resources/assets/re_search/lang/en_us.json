@@ -4,15 +4,44 @@
     "category.re_search.keybinds": "Regex Search",
     "key.re_search.search": "Open search box",
     "screen.re_search.label": "Search",
+    
+
     "option.re_search.case_sensitivity.sensitive": "Case sensitive",
     "description.re_search.case_sensitivity.sensitive": "Match letter case",
+    
     "option.re_search.case_sensitivity.insensitive": "Case insensitive",
     "description.re_search.case_sensitivity.insensitive": "Ignore letter case",
+    
+
     "option.re_search.search_mode.regex": "Regex search",
     "description.re_search.search_mode.regex": "Search using regular expressions",
+    
     "option.re_search.search_mode.literal": "Literal search",
     "description.re_search.search_mode.literal": "Search for literal text",
+    
     "option.re_search.search_mode.extended": "Extended search",
     "description.re_search.search_mode.extended": "Search using extended notation",
+    
+
+    "option.re_search.search_type.both": "Search both",
+    "description.re_search.search_type.both": "Search in blocks and entities",
+    
+    "option.re_search.search_type.blocks": "Search blocks",
+    "description.re_search.search_type.blocks": "Search in blocks",
+    
+    "option.re_search.search_type.entities": "Search entities",
+    "description.re_search.search_type.entities": "Search in entities",
+    
+
+    "option.re_search.keep_mode.clear": "Clear",
+    "description.re_search.keep_mode.clear": "Clear search field every time",
+    
+    "option.re_search.keep_mode.keep": "Keep",
+    "description.re_search.keep_mode.keep": "Remember last search",
+    
+    "option.re_search.keep_mode.keep_highlight": "Auto select",
+    "description.re_search.keep_mode.keep_highlight": "Remember last search and select it",
+    
+
     "config.re_search.reloaded": "Reloaded config"
 }

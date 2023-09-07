@@ -1,9 +1,9 @@
 {
 	"schemaVersion": 1,
 	"id": "re_search",
-	"version": "0.1.0",
+	"version": "1.0.0",
 	"name": "Regex Search",
-	"description": "Search for items in the world using different search modes.",
+	"description": "Search and highlight items in the world using Regular Experssions",
 	"authors": [
 		"Natte"
 	],

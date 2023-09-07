@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.joml.Matrix4f;
+import org.lwjgl.opengl.GL11;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -150,22 +151,24 @@ public class WorldRendering {
                 Tessellator tessellator = Tessellator.getInstance();
                 BufferBuilder buffer = tessellator.getBuffer();
             
-                buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE);
-                buffer.vertex(positionMatrix, -0.5f, 0.5f, 0).color(0xffffffff).texture(0f, 0f).next();
-                buffer.vertex(positionMatrix, -0.5f, -0.5f, 0).color(0xffffffff).texture(0f, 1f).next();
-                buffer.vertex(positionMatrix, 0.5f, -0.5f, 0).color(0xffffffff).texture(1f, 1f).next();
-                buffer.vertex(positionMatrix, 0.5f, 0.5f, 0).color(0xffffffff).texture(1f, 0f).next();
+                // buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE);
+                buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE);
+                buffer.vertex(positionMatrix, -0.5f, 0.5f, 0).texture(0f, 0f).next();
+                buffer.vertex(positionMatrix, -0.5f, -0.5f, 0).texture(0f, 1f).next();
+                buffer.vertex(positionMatrix, 0.5f, -0.5f, 0).texture(1f, 1f).next();
+                buffer.vertex(positionMatrix, 0.5f, 0.5f, 0).texture(1f, 0f).next();
             
-                RenderSystem.setShader(GameRenderer::getPositionColorTexProgram);
+                // RenderSystem.setShader(GameRenderer::getPositionColorTexProgram);
+                RenderSystem.setShader(GameRenderer::getPositionTexProgram);
                 RenderSystem.setShaderTexture(0, new Identifier(RegexSearch.MOD_ID, "textures/arrow_light.png"));
                 RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
-                // RenderSystem.disableCull();
-                // RenderSystem.depthFunc(GL11.GL_ALWAYS);
+                RenderSystem.disableCull();
+                RenderSystem.depthFunc(GL11.GL_ALWAYS);
             
                 tessellator.draw();
             
-                // RenderSystem.depthFunc(GL11.GL_LEQUAL);
-                // RenderSystem.enableCull();
+                RenderSystem.depthFunc(GL11.GL_LEQUAL);
+                RenderSystem.enableCull();
                         
             }
             matrixStack.pop();

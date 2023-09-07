@@ -18,5 +18,8 @@ public class Config extends ConfigManager {
     @Expose public static boolean searchBlocks = true;    
     @Expose public static boolean searchEntities = true;
 
+    @Expose public static boolean autoSelect = true;
+    @Expose public static boolean keepLast = true;
+
 
 }
