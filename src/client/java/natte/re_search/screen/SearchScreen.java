@@ -102,6 +102,7 @@ public class SearchScreen extends Screen {
                                 Config.searchBlocks, Config.searchEntities).createPacketByteBuf());
   
                 searchHistory.add(text);
+                HighlightRenderer.startRender();
             }
             close();
             return true;

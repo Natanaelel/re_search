@@ -37,16 +37,25 @@ public class HighlightRenderer {
 
     public static List<RenderedItem> renderedItems = new ArrayList<>();
 
+    public static long renderStartTimestamp = 0;
+
     public static void register() {
         HudRenderCallback.EVENT.register((context, tickDelta) -> {
-            if(!Config.isOldHighlighter) onRenderGUI(context, tickDelta);
+            if (!Config.isOldHighlighter)
+                onRenderGUI(context, tickDelta);
         });
+    }
+
+    public static void startRender(){
+        renderStartTimestamp = Game.world.getTime();
     }
 
     public static void onRenderGUI(DrawContext ctx, float tickDelta) {
         if (Game.player == null) {
             return;
         }
+        if (Config.autoHideTime >= 0 && Game.world.getTime() > renderStartTimestamp + Config.autoHideTime * 20)
+            return;
 
         var m = ctx.getMatrices();
 
@@ -90,10 +99,9 @@ public class HighlightRenderer {
                 float scale = 0.15f / distance;
                 scale = Math.max(scale, (scale - 0.02f) * 0.7f + 0.02f);
 
-                
                 float c = 1000f;
                 m.translate(pos.x / uiScale, pos.y / uiScale, -100);
-                m.translate(-renderedItem.x * scale * c, -renderedItem.y * scale * c, - distance * distance);
+                m.translate(-renderedItem.x * scale * c, -renderedItem.y * scale * c, -distance * distance);
                 m.scale(scale, scale, scale);
                 m.scale(1.f, -1.f, 1.f);
                 float sc2 = 1000f;
