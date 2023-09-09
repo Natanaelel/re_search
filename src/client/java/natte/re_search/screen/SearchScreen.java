@@ -1,11 +1,15 @@
 package natte.re_search.screen;
 
+import java.util.ArrayList;
+
 import org.lwjgl.glfw.GLFW;
 
 import natte.re_search.RegexSearch;
 import natte.re_search.config.Config;
 import natte.re_search.network.ItemSearchPacketC2S;
+import natte.re_search.render.HighlightRenderer;
 import natte.re_search.render.WorldRendering;
+import natte.re_search.search.MarkedInventory;
 import natte.re_search.search.SearchOptions;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -92,6 +96,7 @@ public class SearchScreen extends Screen {
             String text = searchBox.getText();
             if (text.isEmpty()) {
                 WorldRendering.clearMarkedInventories();
+                HighlightRenderer.setRenderedItems(new ArrayList<MarkedInventory>());
             } else {
                 ClientPlayNetworking.send(ItemSearchPacketC2S.PACKET_ID, new SearchOptions(text, Config.isCaseSensitive, Config.searchMode,
                                 Config.searchBlocks, Config.searchEntities).createPacketByteBuf());
