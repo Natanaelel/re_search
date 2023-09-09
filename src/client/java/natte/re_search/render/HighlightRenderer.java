@@ -92,8 +92,8 @@ public class HighlightRenderer {
 
                 
                 float c = 1000f;
-                m.translate(pos.x / uiScale, pos.y / uiScale, 100);
-                m.translate(-renderedItem.x * scale * c, -renderedItem.y * scale * c, -distance * distance);
+                m.translate(pos.x / uiScale, pos.y / uiScale, -100);
+                m.translate(-renderedItem.x * scale * c, -renderedItem.y * scale * c, - distance * distance);
                 m.scale(scale, scale, scale);
                 m.scale(1.f, -1.f, 1.f);
                 float sc2 = 1000f;
@@ -273,7 +273,7 @@ public class HighlightRenderer {
 
         var matrixStack = RenderSystem.getModelViewStack();
         matrixStack.push();
-        matrixStack.translate(x, y, 100);
+        matrixStack.translate(x, y, -100);
 
         float c = 1000f;
         matrixStack.translate(-renderedItem.x * scale * c, -renderedItem.y * scale * c,
