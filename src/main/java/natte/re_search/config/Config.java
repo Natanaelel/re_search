@@ -21,7 +21,7 @@ public class Config extends ConfigManager {
     @Expose public static boolean autoSelect = true;
     @Expose public static boolean keepLast = true;
 
-    @Expose public static int autoHideTime = 5;
+    @Expose public static int autoHideTime = 20;
 
     public static boolean isOldHighlighter = false;
 }
