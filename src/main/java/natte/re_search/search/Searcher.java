@@ -1,9 +1,14 @@
 package natte.re_search.search;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import natte.re_search.config.Config;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.ShulkerBoxBlock;
@@ -17,7 +22,6 @@ import net.minecraft.entity.decoration.ItemFrameEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.vehicle.VehicleInventory;
 import net.minecraft.inventory.Inventories;
-import net.minecraft.inventory.Inventory;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -61,6 +65,8 @@ public class Searcher {
             List<Entity> entities = world.getOtherEntities(player,
                     Box.of(player.getPos(), range * 2, range * 2, range * 2));
 
+            entities.sort(Comparator.comparing(entity -> entity.squaredDistanceTo(player)));
+
             for (Entity entity : entities) {
                 if (inventories.size() == Config.maxInventories)
                     break;
@@ -83,7 +89,6 @@ public class Searcher {
             return false;
         if (totalItems == Config.maxSearchResults)
             return false;
-
 
         if (recursionDepth == 0)
             return false;
@@ -143,28 +148,31 @@ public class Searcher {
 
         BlockState blockState = world.getBlockState(blockPos);
 
-        if (blockState.hasBlockEntity()) {
-            BlockEntity tileEntity = world.getBlockEntity(blockPos);
+        Storage<ItemVariant> storage = ItemStorage.SIDED.find(world, blockPos, null);
 
-            // blockentity with inventory
-            if (tileEntity instanceof Inventory inventory) {
-                for (int i = 0; i < inventory.size(); ++i) {
-                    ItemStack itemStack = inventory.getStack(i);
-                    if (search(itemStack, predicate, markedInventory, -1))
-                        foundAny = true;
-                }
-            }
-
-            // lectern
-            else if (tileEntity instanceof LecternBlockEntity lectern) {
-                if (search(lectern.getBook(), predicate, markedInventory, recursionDepth - 1))
+        if (storage != null) {
+            for (StorageView<ItemVariant> view : storage) {
+                if (view.getAmount() == 0)
+                    continue;
+                if (view.isResourceBlank())
+                    continue;
+                if (search(view.getResource().toStack(), predicate, markedInventory, recursionDepth - 1))
                     foundAny = true;
             }
+        } else if (blockState.hasBlockEntity()) {
+            BlockEntity tileEntity = world.getBlockEntity(blockPos);
 
+            // lectern
+            if (tileEntity instanceof LecternBlockEntity lectern) {
+                if (search(lectern.getBook(), predicate, markedInventory, recursionDepth -
+                        1))
+                    foundAny = true;
+            }
         }
 
-        // campfire
-        if (blockState.isOf(Blocks.CAMPFIRE) || blockState.isOf(Blocks.SOUL_CAMPFIRE)) {
+        // // campfire
+        if (blockState.isOf(Blocks.CAMPFIRE) ||
+                blockState.isOf(Blocks.SOUL_CAMPFIRE)) {
             CampfireBlockEntity blockEntity = (CampfireBlockEntity) world.getBlockEntity(blockPos);
 
             for (ItemStack itemStack : blockEntity.getItemsBeingCooked()) {
